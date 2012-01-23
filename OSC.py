@@ -1131,7 +1131,8 @@ class OSCClient(object):
 		  - port:  UDP-port the remote OSC server listens to.
 		"""
 		try:
-                        print address
+                        # HERE is where we can print the address
+                        #print address
 
 			self.socket.connect(address)
 			self.client_address = address

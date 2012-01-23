@@ -12,6 +12,8 @@
 ;; -----------------------------------------------
 (defvar *monome* nil)
 
+(format t "connecting to ~a~%" *connect-port*)
+
 ;; -----------------------------------------------
 ;; UTILITY->OSC ----------------------------------
 ;; -----------------------------------------------
@@ -67,13 +69,16 @@
    (host-port
      :accessor monome-host-port
      :initarg :host-port)
-   (socket
-     :accessor monome-socket
-     :initarg :socket
+   (socket-client
+     :accessor monome-socket-client
      :initform (make-osc-socket))
-   (stream
-     :accessor monome-stream
-     :initarg :stream)))
+   (socket-server
+     :accessor monome-socket-server
+     :initform (make-osc-socket))
+   (stream-client
+     :accessor monome-stream-client)
+   (stream-server
+     :accessor monome-stream-server)))
 
 ;; Methods - - - - - - - - - - - - - - - - - - - -
 (defmethod initialize-instance :after ((monome monome) &key)
@@ -83,18 +88,18 @@
         (host-ent-address (monome-host monome))))
 
 (defmethod monome-connect ((monome monome))
-  (socket-connect (monome-socket       monome)
-                  (monome-host-address monome)
-                  (monome-host-port    monome))
-  (setf (monome-stream monome)
-        (socket-make-stream (monome-socket monome)
+  (socket-connect (monome-socket-client monome)
+                  (monome-host-address  monome)
+                  (monome-host-port     monome))
+  (setf (monome-stream-client monome)
+        (socket-make-stream (monome-socket-client monome)
           :input t
           :output t
           :element-type '(unsigned-byte 8) :buffering :full))
   monome)
 
 (defmacro monome-write-to-stream (monome function-path &rest function-arguments)
- `(osc-write-to-stream (monome-stream ,monome)
+ `(osc-write-to-stream (monome-stream-client ,monome)
                        ,(concatenate 'string "/python" function-path) ;; FIX: This shouldn't be /python
                        ,@function-arguments))
 
@@ -106,13 +111,13 @@
 
 (defmethod monome-listen ((monome monome) port)
   (let ((buffer (make-sequence '(vector (unsigned-byte 8)) 1024)))
-    (socket-bind (monome-socket monome) (monome-host-address monome) port)
+    (socket-bind (monome-socket-server monome) (monome-host-address monome) port)
     (format t "listening on localhost port ~A~%" port)
     (unwind-protect 
         (loop do
-              (socket-receive (monome-socket monome) buffer nil)
+              (socket-receive (monome-socket-server monome) buffer nil)
               (format t "received => ~S~%" (osc:decode-bundle buffer)))
-      (when (monome-socket monome) (socket-close (monome-socket monome))))))
+      (when (monome-socket-server monome) (socket-close (monome-socket-server monome))))))
 
 ;; Functions - - - - - - - - - - - - - - - - - - -
 (defun make-monome (&rest make-instance-options)
@@ -142,7 +147,7 @@
 
 ;;(monome-connect *monome*)
 
-(monome-listen *monome* 52714)
+(monome-listen *monome* *connect-port*)
 
 ;;(dp-register (make-osc-tree) #(0 0 0 0) (lambda () (format t "got something~%")))
 

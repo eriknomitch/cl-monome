@@ -1,1 +1,1 @@
-vim *.lisp run vim-all
+vim *.lisp *.py run vim-all

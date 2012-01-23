@@ -64,15 +64,14 @@ class Monome(OSCServer):
         self.client.connect(address)
         host, port = self.client.socket.getsockname()
 
-        print "I believe we have an OSC Server listening on: ",host," ",port
+        # print "I believe we have an OSC Server listening on: ",host," ",port
+        print port
         
         self.focused = False
         #self.server_host = host
         #self.server_port = port
         self.prefix = DEFAULT_PREFIX
 
-        print self.prefix
-        
         self.addMsgHandler('default', self.monome_handler)
         self.addMsgHandler('/sys/connect', self.sys_misc)
         self.addMsgHandler('/sys/disconnect', self.sys_misc)
@@ -154,7 +153,6 @@ class Monome(OSCServer):
     
     # threading
     def poll(self):
-        print "REQUEST"
         ready = select.select([self], [], [])[0]
         for r in ready:
             self.handle_request()
