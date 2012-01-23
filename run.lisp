@@ -26,12 +26,41 @@
           (finish-output ,stream)))
 
 ;; -----------------------------------------------
+;; CLASS->CELL -----------------------------------
+;; -----------------------------------------------
+(defclass cell ()
+  ((index
+     :accessor cell-index
+     :initarg :index)
+   (state
+     :accessor cell-state
+     :initarg :state
+     :initform nil)))
+
+;; -----------------------------------------------
+;; CLASS->ROW ------------------------------------
+;; -----------------------------------------------
+(defclass row ()
+  ((index
+     :accessor row-index
+     :initarg :index
+     :initform nil)
+   (cells
+     :accessor row-cells
+     :initarg :cells
+     :initform '())))
+
+;; -----------------------------------------------
 ;; CLASS->MONOME ---------------------------------
 ;; -----------------------------------------------
 ;; The CLIENT connects to the Monome unit and sends commands (LED on/off, etc.)
 ;; the SERVER connects to the port we get from python and listens for keypresses.
 (defclass monome ()
-  ((host
+  ((cells
+     :accessor monome-cells
+     :initarg :cells
+     :initform '())
+   (host
      :accessor monome-host
      :initarg :host)
    (host-name
@@ -98,6 +127,11 @@
   (apply #'make-instance (append (list 'monome)
                                  make-instance-options)))
 
+(defun sweep ()
+  (monome-led-set-all *monome* 1)
+  (sleep 0.5)
+  (monome-led-set-all *monome* 0))
+
 ;; -----------------------------------------------
 ;; TEMPORARY -------------------------------------
 ;; -----------------------------------------------
@@ -116,14 +150,24 @@
 ;; -----------------------------------------------
 ;; MAIN ------------------------------------------
 ;; -----------------------------------------------
-(setf *monome* (make-monome :host-name "Eriks-MacBook-Air.local."
-                            :host-port 15932))
+(defun main ()
+  (setf *monome* (make-monome :host-name "Eriks-MacBook-Air.local."
+                              :host-port 15932))
+  (monome-connect *monome*)
+  (make-thread
+    (lambda ()
+      (monome-listen *monome* *connect-port*)))
+  (make-thread
+    (lambda ()
+      (sweep))))
 
-(monome-connect *monome*)
+;; (handler-case (main)
+;;   (sb-sys:interactive-interrupt ()
+;;     (format t "I'm your friendly interrupt handler.~%")
+;;     (sb-ext:quit)))
 
-(monome-listen *monome* *connect-port*)
-
-(make-thread
-  (lambda ()
-    (random-test)))
+;; (handler-case (loop)
+;;   (sb-sys:interactive-interrupt ()
+;;     (format t "friendly~%")
+;;     (sb-ext:quit)))
 
