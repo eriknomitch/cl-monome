@@ -6,13 +6,12 @@
 
 (use-package :osc)
 (use-package :sb-bsd-sockets)
+(use-package :sb-thread)
 
 ;; -----------------------------------------------
 ;; GLOBALS ---------------------------------------
 ;; -----------------------------------------------
 (defvar *monome* nil)
-
-(format t "connecting to ~a~%" *connect-port*)
 
 ;; -----------------------------------------------
 ;; UTILITY->OSC ----------------------------------
@@ -26,36 +25,11 @@
   `(progn (write-sequence (osc:encode-message ,@args) ,stream)
           (finish-output ,stream)))
 
-(defun make-osc-tree ()
-  (make-hash-table :test 'equalp))
-
-(defun dp-register (tree address function)
-  "registers a function to respond to incoming osc message. since
-   only one function should be associated with an address, any
-   previous registration will be overwritten"
-  (setf (gethash address tree)
-        function))
-
-(defun dp-remove (tree address)
-  "removes the function associated with the given address.."
-  (remhash address tree))
-
-(defun dp-match (tree pattern)
-"returns a list of functions which are registered for
- dispatch for a given address pattern.."
-  (list (gethash pattern tree)))
-
-(defun dispatch (tree osc-message)
-  "calls the function(s) matching the address(pattern) in the osc 
-   message with the data contained in the message"
-  (let ((pattern (car osc-message)))
-    (dolist (x (dp-match tree pattern))
-      (unless (eq x NIL)
-        (apply #'x (cdr osc-message))))))
-
 ;; -----------------------------------------------
 ;; CLASS->MONOME ---------------------------------
 ;; -----------------------------------------------
+;; The CLIENT connects to the Monome unit and sends commands (LED on/off, etc.)
+;; the SERVER connects to the port we get from python and listens for keypresses.
 (defclass monome ()
   ((host
      :accessor monome-host
@@ -145,9 +119,11 @@
 (setf *monome* (make-monome :host-name "Eriks-MacBook-Air.local."
                             :host-port 15932))
 
-;;(monome-connect *monome*)
+(monome-connect *monome*)
 
 (monome-listen *monome* *connect-port*)
 
-;;(dp-register (make-osc-tree) #(0 0 0 0) (lambda () (format t "got something~%")))
+(make-thread
+  (lambda ()
+    (random-test)))
 
