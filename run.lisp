@@ -91,6 +91,10 @@
    (stream-server
      :accessor monome-stream-server)))
 
+(defgeneric monome-connect     (monome))
+(defgeneric monome-led-set     (monome x y state))
+(defgeneric monome-led-set-all (monome state))
+
 ;; Methods - - - - - - - - - - - - - - - - - - - -
 (defmethod initialize-instance :after ((monome monome) &key)
   (setf (monome-host monome)
