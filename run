@@ -2,7 +2,4 @@
 
 echo "Prelang v.0.0"
 connect_port=`./initialize.py`
-
-echo $connect_port
-
 sbcl --noinform --eval "(defvar *connect-port* $connect_port)" --load run.lisp

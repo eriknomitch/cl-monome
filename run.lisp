@@ -14,6 +14,14 @@
 (defvar *monome* nil)
 
 ;; -----------------------------------------------
+;; UTILITY ---------------------------------------
+;; -----------------------------------------------
+(defun prompt-read (prompt)
+  (format *query-io* "~a" prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
+
+;; -----------------------------------------------
 ;; UTILITY->OSC ----------------------------------
 ;; -----------------------------------------------
 (defun make-osc-socket()
@@ -145,7 +153,19 @@
         (monome-led-set-all *monome* 0)
         (dotimes (index 15)
           (monome-led-set *monome* (elt random-x index) (elt random-y index) 1))
-        (sleep 0.5)))))
+        (sleep 1)))))
+
+;; -----------------------------------------------
+;; PROMPT ----------------------------------------
+;; -----------------------------------------------
+(defun execute-command (command)
+  (if (string= command "x")
+    nil
+    t))
+
+(defun prompt ()
+  (loop :while (execute-command (prompt-read "> ")))
+  0)
 
 ;; -----------------------------------------------
 ;; MAIN ------------------------------------------
@@ -159,7 +179,14 @@
       (monome-listen *monome* *connect-port*)))
   (make-thread
     (lambda ()
-      (sweep))))
+      (sweep)))
+  (prompt)
+  (sb-ext:quit))
+
+;; -----------------------------------------------
+;; -----------------------------------------------
+;; -----------------------------------------------
+(main)
 
 ;; (handler-case (main)
 ;;   (sb-sys:interactive-interrupt ()
